@@ -5,6 +5,8 @@ import (
 	"literate-barnacle/models"
 
 	"github.com/jmoiron/sqlx"
+
+	_ "embed"
 )
 
 type Repository interface {
