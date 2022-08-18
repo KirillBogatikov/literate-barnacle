@@ -25,6 +25,10 @@ func main() {
 		return context.WithTimeout(mainCtx, d)
 	})
 
+	if err = app.InitLogger(); err != nil {
+		log.Println(err)
+		return
+	}
 	if err = app.InitRepositories(); err != nil {
 		log.Println(err)
 		return

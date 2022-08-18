@@ -104,6 +104,18 @@ func (u UserServiceImpl) Signup(ctx context.Context, request SignUpRequest) (Sig
 		}, nil
 	}
 
+	existUser, err := u.repo.Get(ctx, request.User.Credentials.Login)
+	if err != nil && !errors.Is(err, database.ErrNotFound) {
+		return SignUpResponse{}, fmt.Errorf("can't check login: %v", err)
+	}
+	if len(existUser.Id) > 0 {
+		return SignUpResponse{
+			BaseResponse: BaseResponse{
+				Error: "Данный логин занят",
+			},
+		}, nil
+	}
+
 	passwordHash, err := u.encryptor.Encrypt(request.User.Credentials.Password)
 	if err != nil {
 		return SignUpResponse{}, err

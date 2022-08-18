@@ -5,23 +5,29 @@ import (
 	"errors"
 	"literate-barnacle/api/handlers"
 	"literate-barnacle/service"
-	"log"
 	"net"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/mux"
+	"go.uber.org/zap"
 )
 
 type Server struct {
 	server *http.Server
+	log    *zap.Logger
 }
 
-func NewServer(address string, ctx service.ContextProvider, user service.UserService) Server {
+func NewServer(
+	address string,
+	ctx service.ContextProvider,
+	log *zap.Logger,
+	user service.UserService,
+) Server {
 	router := mux.NewRouter()
 
-	router.Handle("/auth/login", handlers.LoginHandler(user)).Methods(http.MethodPost)
-	router.Handle("/auth/signup", handlers.SignUpHandler(user)).Methods(http.MethodPost)
+	router.Handle("/auth/login", handlers.LoginHandler(log, user)).Methods(http.MethodPost)
+	router.Handle("/auth/signup", handlers.SignUpHandler(log, user)).Methods(http.MethodPost)
 
 	server := &http.Server{
 		Addr:              address,
@@ -36,6 +42,7 @@ func NewServer(address string, ctx service.ContextProvider, user service.UserSer
 
 	return Server{
 		server: server,
+		log:    log,
 	}
 }
 
@@ -48,10 +55,10 @@ func (s *Server) Start() {
 		case errors.Is(err, http.ErrServerClosed):
 			return
 		default:
-			// TODO: log
+			s.log.Error("server down", zap.Error(err))
 		}
 	}()
-	log.Printf("server listening %s", s.server.Addr)
+	s.log.Info("server up", zap.String("address", s.server.Addr))
 }
 
 func (s *Server) Shutdown(ctx context.Context) error {
