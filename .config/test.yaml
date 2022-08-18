@@ -1,0 +1,5 @@
+port: 80
+postgres: postgres://postgres:postgres@localhost/test?search_path=test&sslmode=disable
+jwt:
+  private: ZTBuaA6M7PY68whN8woLgKrminVfvFu5w6wYr-CSKzxYbQiG3uQ5jAypml0XEM6jPu-XvKRAK4k_Fx4idRmkqA
+  public: WG0Iht7kOYwMqZpdFxDOoz7vl7ykQCuJPxceInUZpKg
