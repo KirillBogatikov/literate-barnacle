@@ -32,7 +32,7 @@ func LoginHandler(rawLog *zap.Logger, user service.UserService) http.HandlerFunc
 			return
 		}
 
-		if response.Validation.IsValid() {
+		if response.IsSuccess() {
 			log.Info("user authorized", zap.String("login", request.Login))
 		} else {
 			log.Info("request validation failed")

@@ -7,4 +7,4 @@ create table if not exists users
 );
 
 -- +goose Down
-drop table users;
+drop table if exists users;

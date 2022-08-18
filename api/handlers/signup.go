@@ -14,7 +14,7 @@ func SignUpHandler(rawLog *zap.Logger, user service.UserService) http.HandlerFun
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		rayId := uuid.NewString()
-		log := rawLog.With(zap.String("rayId", rayId), zap.String("method", "auth/login"))
+		log := rawLog.With(zap.String("rayId", rayId), zap.String("method", "auth/signup"))
 
 		request := service.SignUpRequest{}
 
@@ -32,7 +32,7 @@ func SignUpHandler(rawLog *zap.Logger, user service.UserService) http.HandlerFun
 			return
 		}
 
-		if response.Validation.IsValid() {
+		if response.IsSuccess() {
 			log.Info("user created", zap.String("id", response.UserId.String()))
 		} else {
 			log.Info("request validation failed")
