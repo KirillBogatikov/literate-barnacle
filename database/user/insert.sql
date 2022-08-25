@@ -1,2 +1,2 @@
-insert into "users" ("id", "login", "password")
-values (:id, :login, :password);
+insert into "users" ("id", "login", "password", "role")
+values (:id, :login, :password, :role);

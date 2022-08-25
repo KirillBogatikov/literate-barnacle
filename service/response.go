@@ -1,8 +1,10 @@
 package service
 
+import "literate-barnacle/service/validation"
+
 type BaseResponse struct {
-	Error      string        `json:"error"`
-	Validation ValidationMap `json:"validation"`
+	Error      string         `json:"error,omitempty"`
+	Validation validation.Map `json:"validation,omitempty"`
 }
 
 func (b BaseResponse) IsSuccess() bool {

@@ -6,9 +6,10 @@ import (
 	"literate-barnacle/api"
 	"literate-barnacle/config"
 	"literate-barnacle/database"
-	"literate-barnacle/database/user"
-	"literate-barnacle/service"
+	dbuser "literate-barnacle/database/user"
+	"literate-barnacle/service/ctx"
 	"literate-barnacle/service/hash"
+	"literate-barnacle/service/user"
 	"time"
 
 	jwt "github.com/Viva-Victoria/bear-jwt"
@@ -20,20 +21,20 @@ import (
 
 type App struct {
 	settings       config.Settings
-	timeoutContext service.TimeoutContextProvider
+	timeoutContext ctx.TimeoutContextProvider
 
 	log *zap.Logger
 
 	postgres       *sqlx.DB
-	userRepository user.Repository
+	userRepository dbuser.Repository
 
 	encryptor   hash.Encryptor
-	userService service.UserService
+	userService user.Service
 
 	server api.Server
 }
 
-func NewApp(settings config.Settings, timeoutContextProvider service.TimeoutContextProvider) *App {
+func NewApp(settings config.Settings, timeoutContextProvider ctx.TimeoutContextProvider) *App {
 	return &App{
 		settings:       settings,
 		timeoutContext: timeoutContextProvider,
@@ -77,7 +78,7 @@ func (a *App) InitRepositories() error {
 		return fmt.Errorf("can't migrate: %v", err)
 	}
 
-	a.userRepository = user.NewSqlRepository(postgres)
+	a.userRepository = dbuser.NewSqlRepository(postgres)
 	a.log.Info("repositories ready")
 	return nil
 }
@@ -103,12 +104,12 @@ func (a *App) InitServices() error {
 	a.encryptor = hash.NewBCrypt()
 	a.log.Info("security ready")
 
-	a.userService = service.NewUserServiceImpl(a.userRepository, a.encryptor)
+	a.userService = user.NewServiceImpl(a.userRepository, a.encryptor)
 	a.log.Info("services ready")
 	return nil
 }
 
-func (a *App) Start(ctx service.ContextProvider) {
+func (a *App) Start(ctx ctx.ContextProvider) {
 	a.log.Info("starting server")
 	a.server = api.NewServer(fmt.Sprintf(":%d", a.settings.Port), ctx, a.log, a.userService)
 	a.log.Info("server ready")
@@ -117,10 +118,10 @@ func (a *App) Start(ctx service.ContextProvider) {
 
 func (a *App) Shutdown() error {
 	a.log.Info("shutdown...")
-	ctx, cancelCtx := a.timeoutContext(time.Second * 15)
+	с, cancelCtx := a.timeoutContext(time.Second * 15)
 	defer cancelCtx()
 
-	return a.server.Shutdown(ctx)
+	return a.server.Shutdown(с)
 }
 
 func fromBase64(data string) ([]byte, error) {

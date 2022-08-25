@@ -4,7 +4,8 @@ import (
 	"context"
 	"errors"
 	"literate-barnacle/api/handlers"
-	"literate-barnacle/service"
+	"literate-barnacle/service/ctx"
+	"literate-barnacle/service/user"
 	"net"
 	"net/http"
 	"time"
@@ -20,14 +21,17 @@ type Server struct {
 
 func NewServer(
 	address string,
-	ctx service.ContextProvider,
+	ctx ctx.ContextProvider,
 	log *zap.Logger,
-	user service.UserService,
+	user user.Service,
 ) Server {
 	router := mux.NewRouter()
 
 	router.Handle("/auth/login", handlers.LoginHandler(log, user)).Methods(http.MethodPost)
 	router.Handle("/auth/signup", handlers.SignUpHandler(log, user)).Methods(http.MethodPost)
+
+	router.Handle("/user/{userId}", handlers.GetUserHandler(log, user)).Methods(http.MethodGet)
+	router.Handle("/user", handlers.GetUserHandler(log, user)).Methods(http.MethodGet)
 
 	server := &http.Server{
 		Addr:              address,

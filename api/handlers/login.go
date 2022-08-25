@@ -2,21 +2,20 @@ package handlers
 
 import (
 	"encoding/json"
-	"literate-barnacle/service"
+	"literate-barnacle/service/ctx"
+	"literate-barnacle/service/user"
 	"net/http"
 	"time"
 
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
-func LoginHandler(rawLog *zap.Logger, user service.UserService) http.HandlerFunc {
+func LoginHandler(rawLog *zap.Logger, service user.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		rayId := uuid.NewString()
-		log := rawLog.With(zap.String("rayId", rayId), zap.String("method", "auth/login"))
+		log := rawLog.With(zap.String("method", "auth/login"))
 
-		request := service.LoginRequest{}
+		request := user.LoginRequest{}
 
 		err := json.NewDecoder(r.Body).Decode(&request)
 		if err != nil {
@@ -25,7 +24,8 @@ func LoginHandler(rawLog *zap.Logger, user service.UserService) http.HandlerFunc
 			return
 		}
 
-		response, err := user.Login(r.Context(), request)
+		c, _ := ctx.GetContext(r, false)
+		response, err := service.Login(c, request)
 		if err != nil {
 			log.Error("login failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)

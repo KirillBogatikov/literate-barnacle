@@ -3,4 +3,4 @@ select u."id"       as "id",
        u."password" as "password",
        u."role"     as "role"
 from "users" u
-where login = $1
+where id = $1
