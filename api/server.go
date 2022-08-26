@@ -33,6 +33,8 @@ func NewServer(
 	router.Handle("/user/{userId}", handlers.GetUserHandler(log, user)).Methods(http.MethodGet)
 	router.Handle("/user", handlers.GetUserHandler(log, user)).Methods(http.MethodGet)
 	router.Handle("/user", handlers.UpdateUserHandler(log, user)).Methods(http.MethodPut)
+	router.Handle("/user/{userId}", handlers.DeleteUserHandler(log, user)).Methods(http.MethodDelete)
+	router.Handle("/user", handlers.DeleteUserHandler(log, user)).Methods(http.MethodDelete)
 
 	server := &http.Server{
 		Addr:              address,

@@ -22,6 +22,7 @@ type Service interface {
 	Signup(ctx ctx.Context, request SignUpRequest) (SignUpResponse, error)
 	Get(ctx ctx.Context, id uuid.UUID) (Response, error)
 	Update(ctx ctx.Context, user models.User) (Response, error)
+	Delete(ctx ctx.Context, id uuid.UUID) (service.BaseResponse, error)
 }
 
 type ServiceImpl struct {
@@ -149,19 +150,11 @@ func (u ServiceImpl) Signup(ctx ctx.Context, request SignUpRequest) (SignUpRespo
 }
 
 func (u ServiceImpl) Get(c ctx.Context, id uuid.UUID) (Response, error) {
-	if !c.Authorized {
+	resp, err := checkAuthorization(c, id)
+	if err != nil {
 		return Response{
-			BaseResponse: service.BaseResponse{
-				Error: "Необходимо выполнить вход",
-			},
-		}, ctx.ErrUnauthorized
-	}
-	if c.Authorization.UserId.String() != id.String() && c.Authorization.Role != models.RoleAdmin {
-		return Response{
-			BaseResponse: service.BaseResponse{
-				Error: "Отказано в доступе",
-			},
-		}, ctx.ErrForbidden
+			BaseResponse: resp,
+		}, err
 	}
 
 	dbUser, err := u.repo.GetById(c, id.String())
@@ -188,19 +181,11 @@ func (u ServiceImpl) Get(c ctx.Context, id uuid.UUID) (Response, error) {
 }
 
 func (u ServiceImpl) Update(c ctx.Context, user models.User) (Response, error) {
-	if !c.Authorized {
+	resp, err := checkAuthorization(c, user.Id)
+	if err != nil {
 		return Response{
-			BaseResponse: service.BaseResponse{
-				Error: "Необходимо выполнить вход",
-			},
-		}, ctx.ErrUnauthorized
-	}
-	if c.Authorization.UserId.String() != user.Id.String() && c.Authorization.Role != models.RoleAdmin {
-		return Response{
-			BaseResponse: service.BaseResponse{
-				Error: "Отказано в доступе",
-			},
-		}, ctx.ErrForbidden
+			BaseResponse: resp,
+		}, err
 	}
 
 	dbUser, err := u.repo.Update(c, mapUser(user))
@@ -224,4 +209,39 @@ func (u ServiceImpl) Update(c ctx.Context, user models.User) (Response, error) {
 	return Response{
 		User: &domainUser,
 	}, nil
+}
+
+func (u ServiceImpl) Delete(c ctx.Context, id uuid.UUID) (service.BaseResponse, error) {
+	resp, err := checkAuthorization(c, id)
+	if err != nil {
+		return resp, err
+	}
+
+	err = u.repo.Delete(c, id.String())
+	switch {
+	case errors.Is(err, database.ErrNotFound):
+		return service.BaseResponse{
+			Error: "Пользователь не найден",
+		}, database.ErrNotFound
+	case err != nil:
+		return service.BaseResponse{}, fmt.Errorf("can't update user: %w", err)
+	}
+
+	return service.BaseResponse{}, nil
+}
+
+func checkAuthorization(c ctx.Context, id uuid.UUID) (service.BaseResponse, error) {
+	if !c.Authorized {
+		return service.BaseResponse{
+			Error: "Необходимо выполнить вход",
+		}, ctx.ErrUnauthorized
+	}
+
+	if c.Authorization.UserId.String() != id.String() && c.Authorization.Role != models.RoleAdmin {
+		return service.BaseResponse{
+			Error: "Отказано в доступе",
+		}, ctx.ErrForbidden
+	}
+
+	return service.BaseResponse{}, nil
 }
