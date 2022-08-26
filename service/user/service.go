@@ -21,6 +21,7 @@ type Service interface {
 	Login(ctx ctx.Context, request LoginRequest) (LoginResponse, error)
 	Signup(ctx ctx.Context, request SignUpRequest) (SignUpResponse, error)
 	Get(ctx ctx.Context, id uuid.UUID) (Response, error)
+	Update(ctx ctx.Context, user models.User) (Response, error)
 }
 
 type ServiceImpl struct {
@@ -180,6 +181,46 @@ func (u ServiceImpl) Get(c ctx.Context, id uuid.UUID) (Response, error) {
 		return Response{}, fmt.Errorf("can't map user: %w", err)
 	}
 
+	domainUser.Credentials.Password = ""
+	return Response{
+		User: &domainUser,
+	}, nil
+}
+
+func (u ServiceImpl) Update(c ctx.Context, user models.User) (Response, error) {
+	if !c.Authorized {
+		return Response{
+			BaseResponse: service.BaseResponse{
+				Error: "Необходимо выполнить вход",
+			},
+		}, ctx.ErrUnauthorized
+	}
+	if c.Authorization.UserId.String() != user.Id.String() && c.Authorization.Role != models.RoleAdmin {
+		return Response{
+			BaseResponse: service.BaseResponse{
+				Error: "Отказано в доступе",
+			},
+		}, ctx.ErrForbidden
+	}
+
+	dbUser, err := u.repo.Update(c, mapUser(user))
+	switch {
+	case errors.Is(err, database.ErrNotFound):
+		return Response{
+			BaseResponse: service.BaseResponse{
+				Error: "Пользователь не найден",
+			},
+		}, database.ErrNotFound
+	case err != nil:
+		return Response{}, fmt.Errorf("can't update user: %w", err)
+	}
+
+	domainUser, err := mapDbUser(dbUser)
+	if err != nil {
+		return Response{}, fmt.Errorf("can't map user: %w", err)
+	}
+
+	domainUser.Credentials.Password = ""
 	return Response{
 		User: &domainUser,
 	}, nil

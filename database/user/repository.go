@@ -15,6 +15,7 @@ type Repository interface {
 	Get(ctx context.Context, login string) (DbUser, error)
 	GetById(ctx context.Context, id string) (DbUser, error)
 	Add(ctx context.Context, user DbUser) error
+	Update(ctx context.Context, user DbUser) (DbUser, error)
 }
 
 type SqlRepository struct {
@@ -34,6 +35,9 @@ var getByIdSql string
 //go:embed insert.sql
 var insertSql string
 
+//go:embed update.sql
+var updateSql string
+
 func (s SqlRepository) Get(ctx context.Context, login string) (DbUser, error) {
 	return s.getOne(ctx, getSql, login)
 }
@@ -49,6 +53,24 @@ func (s SqlRepository) Add(ctx context.Context, user DbUser) error {
 	}
 
 	return nil
+}
+
+func (s SqlRepository) Update(ctx context.Context, user DbUser) (DbUser, error) {
+	rows, err := s.db.NamedQueryContext(ctx, updateSql, user)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return DbUser{}, database.ErrNotFound
+	case err != nil:
+		return DbUser{}, err
+	}
+	rows.Next()
+
+	var updatedUser DbUser
+	if err = rows.StructScan(&updatedUser); err != nil {
+		return DbUser{}, err
+	}
+
+	return updatedUser, nil
 }
 
 func (s SqlRepository) getOne(ctx context.Context, script string, params ...interface{}) (DbUser, error) {

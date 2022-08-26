@@ -3,6 +3,7 @@ package models
 import (
 	"literate-barnacle/service/validation"
 	"regexp"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -45,6 +46,10 @@ type User struct {
 	Id          uuid.UUID   `json:"id,omitempty"`
 	Credentials Credentials `json:"credentials,omitempty"`
 	Role        Role        `json:"role,omitempty"`
+	Name        string      `json:"name,omitempty"`
+	Surname     string      `json:"surname,omitempty"`
+	Patronymic  string      `json:"patronymic,omitempty"`
+	BirthDate   time.Time   `json:"birthDate,omitempty"`
 }
 
 func (u User) Validate() validation.Map {
