@@ -54,3 +54,9 @@ type Response struct {
 	service.BaseResponse
 	User *models.User `json:"user,omitempty"`
 }
+
+func userNotFoundResponse() service.BaseResponse {
+	return service.BaseResponse{
+		Error: "Пользователь не найден",
+	}
+}

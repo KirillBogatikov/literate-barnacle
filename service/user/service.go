@@ -50,11 +50,7 @@ func (u ServiceImpl) Login(ctx ctx.Context, request LoginRequest) (LoginResponse
 	dbUser, err := u.repo.Get(ctx, request.Login)
 	switch {
 	case errors.Is(err, database.ErrNotFound):
-		return LoginResponse{
-			BaseResponse: service.BaseResponse{
-				Error: fmt.Sprintf("Пользователь \"%s\" не найден", request.Login),
-			},
-		}, nil
+		return LoginResponse{BaseResponse: userNotFoundResponse()}, nil
 	case err != nil:
 		return LoginResponse{}, fmt.Errorf("can't get user from DB: %w", err)
 	}
@@ -160,11 +156,7 @@ func (u ServiceImpl) Get(c ctx.Context, id uuid.UUID) (Response, error) {
 	dbUser, err := u.repo.GetById(c, id.String())
 	switch {
 	case errors.Is(err, database.ErrNotFound):
-		return Response{
-			BaseResponse: service.BaseResponse{
-				Error: "Пользователь не найден",
-			},
-		}, database.ErrNotFound
+		return Response{BaseResponse: userNotFoundResponse()}, database.ErrNotFound
 	case err != nil:
 		return Response{}, fmt.Errorf("can't get user: %w", err)
 	}
@@ -191,11 +183,7 @@ func (u ServiceImpl) Update(c ctx.Context, user models.User) (Response, error) {
 	dbUser, err := u.repo.Update(c, mapUser(user))
 	switch {
 	case errors.Is(err, database.ErrNotFound):
-		return Response{
-			BaseResponse: service.BaseResponse{
-				Error: "Пользователь не найден",
-			},
-		}, database.ErrNotFound
+		return Response{BaseResponse: userNotFoundResponse()}, database.ErrNotFound
 	case err != nil:
 		return Response{}, fmt.Errorf("can't update user: %w", err)
 	}
@@ -220,9 +208,7 @@ func (u ServiceImpl) Delete(c ctx.Context, id uuid.UUID) (service.BaseResponse, 
 	err = u.repo.Delete(c, id.String())
 	switch {
 	case errors.Is(err, database.ErrNotFound):
-		return service.BaseResponse{
-			Error: "Пользователь не найден",
-		}, database.ErrNotFound
+		return userNotFoundResponse(), database.ErrNotFound
 	case err != nil:
 		return service.BaseResponse{}, fmt.Errorf("can't update user: %w", err)
 	}
