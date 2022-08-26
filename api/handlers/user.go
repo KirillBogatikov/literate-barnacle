@@ -2,8 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
-	"literate-barnacle/database"
 	"literate-barnacle/service/ctx"
 	"literate-barnacle/service/models"
 	"literate-barnacle/service/user"
@@ -19,6 +17,7 @@ func GetUserHandler(rawLog *zap.Logger, service user.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		log := rawLog.With(zap.String("method", "user/get"))
+		defer log.Debug("request finished", zap.String("executionTime", time.Since(start).String()))
 
 		c, err := ctx.GetContext(r, true)
 		if err != nil {
@@ -43,29 +42,7 @@ func GetUserHandler(rawLog *zap.Logger, service user.Service) http.HandlerFunc {
 		}
 
 		response, err := service.Get(c, userId)
-		switch {
-		case err == nil:
-			WriteJson(w, log, http.StatusOK, response)
-
-		case errors.Is(err, database.ErrNotFound):
-			log.Error("failed", zap.Error(err))
-			WriteJson(w, log, http.StatusNotFound, response)
-
-		case errors.Is(err, ctx.ErrUnauthorized):
-			log.Error("failed", zap.Error(err))
-			WriteJson(w, log, http.StatusUnauthorized, response)
-
-		case errors.Is(err, ctx.ErrForbidden):
-			log.Error("failed", zap.Error(err))
-			WriteJson(w, log, http.StatusForbidden, response)
-
-		default:
-			log.Error("failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		log.Debug("request finished", zap.String("executionTime", time.Since(start).String()))
+		ProcessResponse(w, log, response, err)
 	}
 }
 
@@ -73,6 +50,7 @@ func UpdateUserHandler(rawLog *zap.Logger, service user.Service) http.HandlerFun
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		log := rawLog.With(zap.String("method", "user/update"))
+		defer log.Debug("request finished", zap.String("executionTime", time.Since(start).String()))
 
 		c, err := ctx.GetContext(r, true)
 		if err != nil {
@@ -89,29 +67,7 @@ func UpdateUserHandler(rawLog *zap.Logger, service user.Service) http.HandlerFun
 		}
 
 		response, err := service.Update(c, domainUser)
-		switch {
-		case err == nil:
-			WriteJson(w, log, http.StatusOK, response)
-
-		case errors.Is(err, database.ErrNotFound):
-			log.Error("failed", zap.Error(err))
-			WriteJson(w, log, http.StatusNotFound, response)
-
-		case errors.Is(err, ctx.ErrUnauthorized):
-			log.Error("failed", zap.Error(err))
-			WriteJson(w, log, http.StatusUnauthorized, response)
-
-		case errors.Is(err, ctx.ErrForbidden):
-			log.Error("failed", zap.Error(err))
-			WriteJson(w, log, http.StatusForbidden, response)
-
-		default:
-			log.Error("failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		log.Debug("request finished", zap.String("executionTime", time.Since(start).String()))
+		ProcessResponse(w, log, response, err)
 	}
 }
 
@@ -119,6 +75,7 @@ func DeleteUserHandler(rawLog *zap.Logger, service user.Service) http.HandlerFun
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		log := rawLog.With(zap.String("method", "user/delete"))
+		defer log.Debug("request finished", zap.String("executionTime", time.Since(start).String()))
 
 		c, err := ctx.GetContext(r, true)
 		if err != nil {
@@ -143,28 +100,6 @@ func DeleteUserHandler(rawLog *zap.Logger, service user.Service) http.HandlerFun
 		}
 
 		response, err := service.Delete(c, userId)
-		switch {
-		case err == nil:
-			WriteJson(w, log, http.StatusOK, response)
-
-		case errors.Is(err, database.ErrNotFound):
-			log.Error("failed", zap.Error(err))
-			WriteJson(w, log, http.StatusNotFound, response)
-
-		case errors.Is(err, ctx.ErrUnauthorized):
-			log.Error("failed", zap.Error(err))
-			WriteJson(w, log, http.StatusUnauthorized, response)
-
-		case errors.Is(err, ctx.ErrForbidden):
-			log.Error("failed", zap.Error(err))
-			WriteJson(w, log, http.StatusForbidden, response)
-
-		default:
-			log.Error("failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		log.Debug("request finished", zap.String("executionTime", time.Since(start).String()))
+		ProcessResponse(w, log, response, err)
 	}
 }
